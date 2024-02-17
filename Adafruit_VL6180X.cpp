@@ -434,39 +434,78 @@ void Adafruit_VL6180X::getID(uint8_t *id_ptr) {
 
 // Read 1 byte from the VL6180X at 'address'
 uint8_t Adafruit_VL6180X::read8(uint16_t address) {
-  uint8_t buffer[2];
-  buffer[0] = uint8_t(address >> 8);
-  buffer[1] = uint8_t(address & 0xFF);
-  i2c_dev->write(buffer, 2);
-  i2c_dev->read(buffer, 1);
-  return buffer[0];
+bool errTx, errRx;
+uint8_t buffer[2];
+    buffer[0] = uint8_t(address >> 8);
+    buffer[1] = uint8_t(address & 0xFF);
+    errTx = i2c_dev->write(buffer, 2);
+    errRx = i2c_dev->read(buffer, 1);
+    if (errorQueueRx != NULL && !errRx) {
+        // Feed the error code to the queue
+        xQueueSend(errorQueueRx, &address, errorQueueTimeout);
+    }
+    if (errorQueueTx != NULL && !errTx) {
+        // Feed the error code to the queue
+        xQueueSend(errorQueueRx, &address, errorQueueTimeout);
+    }
+    return buffer[0];
 }
 
 // Read 2 byte from the VL6180X at 'address'
 uint16_t Adafruit_VL6180X::read16(uint16_t address) {
-  uint8_t buffer[2];
-  buffer[0] = uint8_t(address >> 8);
-  buffer[1] = uint8_t(address & 0xFF);
-  i2c_dev->write(buffer, 2);
-  i2c_dev->read(buffer, 2);
-  return uint16_t(buffer[0]) << 8 | uint16_t(buffer[1]);
+bool errTx, errRx;
+uint8_t buffer[2];
+    buffer[0] = uint8_t(address >> 8);
+    buffer[1] = uint8_t(address & 0xFF);
+    errTx = i2c_dev->write(buffer, 2);
+    errRx = i2c_dev->read(buffer, 2);
+    if (errorQueueRx != NULL && !errRx) {
+        // Feed the error code to the queue
+        xQueueSend(errorQueueRx, &address, errorQueueTimeout);
+    }
+    if (errorQueueTx != NULL && !errTx) {
+        // Feed the error code to the queue
+        xQueueSend(errorQueueRx, &address, errorQueueTimeout);
+    }
+    return uint16_t(buffer[0]) << 8 | uint16_t(buffer[1]);
 }
 
 // write 1 byte
 void Adafruit_VL6180X::write8(uint16_t address, uint8_t data) {
-  uint8_t buffer[3];
-  buffer[0] = uint8_t(address >> 8);
-  buffer[1] = uint8_t(address & 0xFF);
-  buffer[2] = data;
-  i2c_dev->write(buffer, 3);
+bool errTx;
+uint8_t buffer[3];
+    buffer[0] = uint8_t(address >> 8);
+    buffer[1] = uint8_t(address & 0xFF);
+    buffer[2] = data;
+    errTx = i2c_dev->write(buffer, 3);
+    if (errorQueueTx != NULL && !errTx) {
+        // Feed the error code to the queue
+        xQueueSend(errorQueueRx, &address, errorQueueTimeout);
+    }
 }
 
 // write 2 bytes
 void Adafruit_VL6180X::write16(uint16_t address, uint16_t data) {
-  uint8_t buffer[4];
-  buffer[0] = uint8_t(address >> 8);
-  buffer[1] = uint8_t(address & 0xFF);
-  buffer[2] = uint8_t(data >> 8);
-  buffer[3] = uint8_t(data & 0xFF);
-  i2c_dev->write(buffer, 4);
+bool errTx;
+uint8_t buffer[4];
+    buffer[0] = uint8_t(address >> 8);
+    buffer[1] = uint8_t(address & 0xFF);
+    buffer[2] = uint8_t(data >> 8);
+    buffer[3] = uint8_t(data & 0xFF);
+    errTx = i2c_dev->write(buffer, 4);
+    if (errorQueueTx != NULL && !errTx) {
+        // Feed the error code to the queue
+        xQueueSend(errorQueueRx, &address, errorQueueTimeout);
+    }
+}
+
+/// @brief provide the Queue handlers to be able to check the correct transmit/receive of data on I2C, the adresse is feed to the queue for further analysis
+/// @param queueTx 
+/// @param queueRx 
+/// @param timeout 
+void Adafruit_VL6180X::setErrorQueue(QueueHandle_t queueTx, QueueHandle_t queueRx, uint32_t timeout)
+{
+    errorQueueRx = queueRx;
+    errorQueueTx = queueTx;
+    errorQueueTimeout = timeout;
 }
