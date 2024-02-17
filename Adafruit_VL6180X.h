@@ -103,6 +103,13 @@ public:
   void setOffset(uint8_t offset);
   void getID(uint8_t *id_ptr);
 
+  // Error Queue handle
+  QueueHandle_t errorQueueRx = NULL;
+  QueueHandle_t errorQueueTx = NULL;
+  uint32_t      errorQueueTimeout;
+  // Set the error queue handler
+  void setErrorQueue(QueueHandle_t queueTx, QueueHandle_t queueRx, uint32_t timeout);
+
 private:
   Adafruit_I2CDevice *i2c_dev = NULL; ///< Pointer to I2C bus interface
   void loadSettings(void);
